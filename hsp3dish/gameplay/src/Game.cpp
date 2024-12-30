@@ -78,6 +78,9 @@ Game::Game()
 #ifndef HSPDISH
 	, _scriptController(NULL), _scriptTarget(NULL)
 #endif
+#ifdef HSPDISH
+    , _originX(1.0f), _originY(1.0f), _scaleX(1.0f), _scaleY(1.0f)
+#endif
 {
     GP_ASSERT(__gameInstance == NULL);
 
@@ -182,6 +185,13 @@ int Game::run()
     _width = Platform::getDisplayWidth();
     _height = Platform::getDisplayHeight();
 
+#ifdef HSPDISH
+    _originX = Platform::getDisplayOriginX();
+    _originY = Platform::getDisplayOriginY();
+    _scaleX = Platform::getDisplayScaleX();
+    _scaleY = Platform::getDisplayScaleY();
+#endif
+
     // Start up game systems.
     if (!startup())
     {
@@ -197,7 +207,11 @@ bool Game::startup()
     if (_state != UNINITIALIZED)
         return false;
 
+#ifndef HSPDISH
     setViewport(Rectangle(0.0f, 0.0f, (float)_width, (float)_height));
+#else
+    setViewport(Rectangle(_originX, _originY, (float)_width * _scaleX, (float)_height * _scaleY));
+#endif
     RenderState::initialize();
     FrameBuffer::initialize();
 

@@ -41,7 +41,7 @@ public:
      * @return The created platform interface.
      * @script{ignore}
      */
-    static Platform* create(Game* game, void* attachToWindow = NULL, int sizex=0, int sizey=0, bool fullscreen=false);
+    static Platform* create(Game* game, void* attachToWindow = NULL, int sizex=0, int sizey=0, bool fullscreen=false, int sx=0, int sy=0, int mode=0);
 
     /**
      * Begins processing the platform messages.
@@ -91,6 +91,18 @@ private:
      * @return The display height.
      */
     static unsigned int getDisplayHeight();
+
+#ifdef HSPDISHGP
+    /**
+     * Gets the display origin or display scale.
+     *
+     * @return The display origin or display scale.
+     */
+    static float getDisplayOriginX();
+    static float getDisplayOriginY();
+    static float getDisplayScaleX();
+    static float getDisplayScaleY();
+#endif
 
     /**
      * Gets the absolute platform time starting from when the message pump was started.

@@ -43,6 +43,10 @@ static float __mouseCapturePointY = 0;
 static bool __multiSampling = false;
 static bool __cursorVisible = true;
 static int __windowSize[2];
+#ifdef HSPDISHGP
+static float __windowOrigin[2];
+static float __windowScale[2];
+#endif
 static void* __attachToWindow;
 
 namespace gameplay
@@ -69,7 +73,7 @@ namespace gameplay
     {
     }
 
-    Platform* Platform::create(Game* game, void* attachToWindow, int sizex, int sizey, bool fullscreen)
+    Platform* Platform::create(Game* game, void* attachToWindow, int sizex, int sizey, bool fullscreen, int sx, int sy, int mode)
     {
 
         GP_ASSERT(game);
@@ -80,6 +84,46 @@ namespace gameplay
 
         __windowSize[0] = sizex;
         __windowSize[1] = sizey;
+
+#ifdef HSPDISHGP
+        int m_mode;
+        float x,y;
+        float adjx,adjy;
+        adjx = (float)sx/(float)sizex;
+        adjy = (float)sy/(float)sizey;
+        m_mode = mode;
+        if ( mode == 0 ) {
+            x = (float)sizex * adjy;
+            y = (float)sizey * adjx;
+            if ( adjx > adjy ) {
+                m_mode=1;
+                if ( y > (float)sy ) { m_mode=2; }
+            } else {
+                m_mode=2;
+                if ( x > (float)sx ) { m_mode=1; }
+            }
+        }
+        switch( m_mode ) {
+        case 1:
+            __windowScale[0] = adjx;
+            __windowScale[1] = adjx;
+            break;
+        case 2:
+            __windowScale[0] = adjy;
+            __windowScale[1] = adjy;
+            break;
+        default:
+            __windowScale[0] = adjx;
+            __windowScale[1] = adjy;
+            break;
+        }
+        
+        float ox,oy;
+        ox = (float)sizex;
+        oy = (float)sizey;
+        __windowOrigin[0] = ( sx - (ox * __windowScale[0]) ) / 2;
+        __windowOrigin[1] = ( sy - (oy * __windowScale[1]) ) / 2;
+#endif
 
         // Use OpenGL 2.x with GLEW
         glewExperimental = GL_TRUE;
@@ -159,6 +203,28 @@ namespace gameplay
     {
         return __windowSize[1];
     }
+
+#ifdef HSPDISHGP
+    float Platform::getDisplayOriginX()
+    {
+        return __windowOrigin[0];
+    }
+
+    float Platform::getDisplayOriginY()
+    {
+        return __windowOrigin[1];
+    }
+
+    float Platform::getDisplayScaleX()
+    {
+        return __windowScale[0];
+    }
+
+    float Platform::getDisplayScaleY()
+    {
+        return __windowScale[1];
+    }
+#endif
 
     double Platform::getAbsoluteTime()
     {

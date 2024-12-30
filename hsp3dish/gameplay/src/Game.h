@@ -190,6 +190,18 @@ public:
      */
     inline unsigned int getHeight() const;
     
+#ifdef HSPDISH
+    /**
+     * Gets the origin or scale of the game window.
+     *
+     * @return Origin or scale of the game window.
+     */
+    inline float getOriginX() const;
+    inline float getOriginY() const;
+    inline float getScaleX() const;
+    inline float getScaleY() const;
+#endif
+
     /**
      * Gets the aspect ratio of the window. (width / height)
      * 
@@ -794,6 +806,13 @@ private:
     static int _FixedTimeMode;  	            // The Fixed time mode. (0=none)
     static double _FixedTimeRate;               // The total time rate.
     static double _FixedTimeCount;              // The Fixed time count.
+#endif
+
+#ifdef HSPDISH
+    float _originX;                             // The origin x-coordinate of the game window.
+    float _originY;                             // The origin y-coordinate of the game window.
+    float _scaleX;                              // The x-axis scale of the game window.
+    float _scaleY;                              // The y-axis scale of the game window.
 #endif
 
     // Note: Do not add STL object member variables on the stack; this will cause false memory leaks to be reported.

@@ -55,6 +55,7 @@ static char fpas[]={ 'H'-48,'S'-48,'P'-48,'H'-48,
 static char optmes[] = "HSPHED~~\0_1_________2_________3______";
 
 static int hsp_wx, hsp_wy, hsp_wd, hsp_ss;
+static int hsp_sx, hsp_sy;
 static int drawflag;
 static int hsp_fps;
 static int hsp_limit_step_per_frame;
@@ -113,8 +114,8 @@ static int handleEvent( void ) {
 				float x,y;
 				Bmscr *bm;
 				bm = (Bmscr *)exinfo->HspFunc_getbmscr(0);
-				x = event.tfinger.x * bm->sx;
-				y = event.tfinger.y * bm->sy;
+				x = event.tfinger.x * hsp_sx;
+				y = event.tfinger.y * hsp_sy;
 				int id = event.tfinger.fingerId;
 				xx = (int)x; yy = (int)y;
 				hgio_cnvview((BMSCR *)bm,&xx,&yy);
@@ -128,8 +129,8 @@ static int handleEvent( void ) {
 				float x,y;
 				Bmscr *bm;
 				bm = (Bmscr *)exinfo->HspFunc_getbmscr(0);
-				x = event.tfinger.x * bm->sx;
-				y = event.tfinger.y * bm->sy;
+				x = event.tfinger.x * hsp_sx;
+				y = event.tfinger.y * hsp_sy;
 				int id = event.tfinger.fingerId;
 				xx = (int)x; yy = (int)y;
 				hgio_cnvview((BMSCR *)bm,&xx,&yy);
@@ -146,13 +147,13 @@ static int handleEvent( void ) {
 					SDL_MouseMotionEvent *m = (SDL_MouseMotionEvent*)&event;
 					int x, y;
 					bm = (Bmscr *)exinfo->HspFunc_getbmscr(0);
-#ifdef HSPDISHGP
-					x = m->x;
-					y = m->y;
-#else
+// #ifdef HSPDISHGP
+// 					x = m->x;
+// 					y = m->y;
+// #else
 					hgio_scale_point( m->x, m->y, x, y );
 					hgio_cnvview((BMSCR *)bm,&x,&y);
-#endif
+// #endif
 
 					bm->savepos[BMSCR_SAVEPOS_MOSUEX] = x;
 					bm->savepos[BMSCR_SAVEPOS_MOSUEY] = y;
@@ -683,6 +684,8 @@ int hsp3dish_init( char *startfile )
 		sx = hsp_wx;
 		sy = hsp_wy;
 	}
+	hsp_sx = (int)sx;
+	hsp_sy = (int)sy;
 
 	char *env_autoscale = getenv( "HSP_AUTOSCALE" );
 	int autoscale = 0;
@@ -736,11 +739,11 @@ int hsp3dish_init( char *startfile )
 	hsp3dish_initwindow( NULL, sx, sy, "HSPDish ver" hspver);
 
 	if ( sx != hsp_wx || sy != hsp_wy ) {
-#ifndef HSPDISHGP
+// #ifndef HSPDISHGP
 		hgio_view( hsp_wx, hsp_wy );
 		hgio_size( sx, sy );
 		hgio_autoscale( autoscale );
-#endif
+// #endif
 	}
 
 #ifdef HSPDISHGP
@@ -753,7 +756,7 @@ int hsp3dish_init( char *startfile )
 	gameplay::Logger::set(gameplay::Logger::LEVEL_ERROR, logfunc);
 
 	//	platform = gameplay::Platform::create( game, NULL, hsp_wx, hsp_wy, false );
-	platform = gameplay::Platform::create( game, NULL, hsp_wx, hsp_wy, false );
+	platform = gameplay::Platform::create( game, NULL, hsp_wx, hsp_wy, false, sx, sy, autoscale );
 	if ( platform == NULL ) {
 		hsp3dish_dialog( (char *)gplog.c_str() );
 		hsp3dish_dialog( "OpenGL initalize failed." );

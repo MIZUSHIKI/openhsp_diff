@@ -29,6 +29,25 @@ inline unsigned int Game::getHeight() const
     return _height;
 }
 
+#ifdef HSPDISH
+inline float Game::getOriginX() const
+{
+    return _originX;
+}
+inline float Game::getOriginY() const
+{
+    return _originY;
+}
+inline float Game::getScaleX() const
+{
+    return _scaleX;
+}
+inline float Game::getScaleY() const
+{
+    return _scaleY;
+}
+#endif
+
 inline float Game::getAspectRatio() const
 {
     return (float)_width / (float)_height;

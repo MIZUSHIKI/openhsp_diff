@@ -119,6 +119,11 @@ static float _scaleY;	// スケールY
 static float _rateX;	// 1/スケールX
 static float _rateY;	// 1/スケールY
 
+#ifdef HSPDISHGP
+static int _bgsx, _bgsy;	//背景サイズ
+static int _sizex, _sizey;	//初期サイズ
+#endif
+
 #ifdef HSPNDK
 static engine	*appengine;
 #endif
@@ -388,6 +393,12 @@ void hgio_init( int mode, int sx, int sy, void *hwnd )
 	_rateX = 1.0f;
 	_rateY = 1.0f;
 #endif
+#ifdef HSPDISHGP
+	_bgsx = sx;
+	_bgsy = sy;
+	_sizex = sx;
+	_sizey = sy;
+#endif
 	GeometryInit();
 
 	//		infovalをリセット
@@ -427,6 +438,70 @@ void hgio_init( int mode, int sx, int sy, void *hwnd )
 	star_init();
 #endif
 }
+
+
+#ifdef HSPDISHGP
+void hgio_size( int sx, int sy )
+{
+	_sizex = sx;
+	_sizey = sy;
+}
+
+
+void hgio_view( int sx, int sy )
+{
+	_bgsx = sx;
+	_bgsy = sy;
+    //Alertf( "Size(%d,%d)",_bgsx,_bgsy );
+}
+
+
+void hgio_scale( float xx, float yy )
+{
+	_scaleX = xx;
+	_scaleY = yy;
+    //Alertf( "Scale(%f,%f)",_scaleX,_scaleY );
+}
+
+
+void hgio_autoscale( int mode )
+{
+	int m_mode;
+	float x,y;
+	float adjx,adjy;
+	adjx = (float)_sizex/(float)_bgsx;
+	adjy = (float)_sizey/(float)_bgsy;
+
+	m_mode = mode;
+	if ( mode == 0 ) {
+		x = (float)_bgsx * adjy;
+		y = (float)_bgsy * adjx;
+		if ( adjx > adjy ) {
+			m_mode=1;
+			if ( y > (float)_sizey ) { m_mode=2; }
+		} else {
+			m_mode=2;
+			if ( x > (float)_sizex ) { m_mode=1; }
+		}
+	}
+
+	switch( m_mode ) {
+	case 1:
+		_scaleX = adjx;
+		_scaleY = adjx;
+		break;
+	case 2:
+		_scaleX = adjy;
+		_scaleY = adjy;
+		break;
+	default:
+		_scaleX = adjx;
+		_scaleY = adjy;
+		break;
+	}
+    //Alertf( "Scale(%f,%f)",_scaleX,_scaleY );
+}
+#endif
 
 
 void hgio_clsmode( int mode, int color, int tex )
@@ -513,6 +588,17 @@ int hgio_render_start( void )
 			game->selectFrameBuffer((gameplay::FrameBuffer *)gselbm->master_buffer, gselbm->sx, gselbm->sy);
 		}
 	}
+
+#ifdef HSPDISHGP
+	float ox,oy;
+	_rateX = 1.0f / _scaleX;
+	_rateY = 1.0f / _scaleY;
+	ox = (float)_bgsx;
+	oy = (float)_bgsy;
+    //ビューポート変換
+	_originX = ( _sizex - (ox * _scaleX) ) / 2;
+	_originY = ( _sizey - (oy * _scaleY) ) / 2;
+#endif
 
 	hgio_setview(gselbm);
 	drawflag = 1;
@@ -1924,6 +2010,14 @@ int hgio_android_seek( FILE* ptr, int offset, int whence )
 
 /*-------------------------------------------------------------------------------*/
 
+#ifdef HSPDISHGP
+void hgio_scale_point( int xx, int yy, int &x, int & y )
+{
+	x = ( xx - _originX ) * _rateX;
+	y = ( yy - _originY ) * _rateY;
+}
+#endif
+
 #if defined(HSPNDK)||defined(HSPIOS)
 
 void hgio_touch( int xx, int yy, int button )
@@ -2033,7 +2127,23 @@ void hgio_touch( int xx, int yy, int button )
         mainbm->tapstat = button;
         bm = (Bmscr *)mainbm;
         bm->UpdateAllObjects();
-        bm->setMTouchByPointId( 0, mouse_x, mouse_y, button!=0 );
+        // bm->setMTouchByPointId( 0, mouse_x, mouse_y, button!=0 );
+		HSP3MTOUCH *mt;
+		bool notice = false;
+		if (button!=0) {
+			mt = bm->getMTouchByPointId(-1);
+			if (mt==NULL) {
+				mt = bm->getMTouch(0);
+				if (mt->flag == 0) notice=true;
+			} else {
+				notice=true;
+			}
+		} else {
+			notice=true;
+		}
+		if (notice) {
+	        bm->setMTouchByPointId( -1, mouse_x, mouse_y, button!=0 );
+		}
     }
 }
 
@@ -2305,19 +2415,41 @@ void hgio_cnvview(BMSCR* bm, int* xaxis, int* yaxis)
 
 #if 1
 	VECTOR v1, v2;
+	// v1.x = (float)*xaxis;
+	// v1.y = (float)(nDestHeight - *yaxis);
+	// v1.z = 1.0f;
+	// v1.w = 0.0f;
+
+	// v1.x -= _center_sx;
+	// v1.y -= _center_sy;
+	// v1.x *= _rate_sx;
+	// v1.y *= _rate_sy;
+
+	// ApplyMatrix(&mat_unproj, &v2, &v1);
+	// *xaxis = (int)v2.x;
+	// *yaxis = (int)v2.y;
+	
 	v1.x = (float)*xaxis;
-	v1.y = (float)(nDestHeight - *yaxis);
+	v1.y = (float)(_bgsy-*yaxis);
 	v1.z = 1.0f;
 	v1.w = 0.0f;
 
-	v1.x -= _center_sx;
-	v1.y -= _center_sy;
-	v1.x *= _rate_sx;
-	v1.y *= _rate_sy;
+	v1.x -= _bgsx/2;
+	v1.y -= _bgsy/2;
+	v1.x *= 2.0f / float(_bgsx);
+	v1.y *= 2.0f / float(_bgsy);
+
+//	*xaxis = (int)(v1.x);
+//	*yaxis = (int)(v1.y);
+
+//	D3DXVECTOR3 a1,a2;
+//	D3DXVec3TransformCoord(&a2, &D3DXVECTOR3(v1.x, v1.y, v1.z), &InvViewport);
+//	*xaxis = (int)a2.x;
+//	*yaxis = (int)a2.y;
 
 	ApplyMatrix(&mat_unproj, &v2, &v1);
 	*xaxis = (int)v2.x;
-	*yaxis = (int)v2.y;
+	*yaxis = (int)-v2.y;
 #endif
 }
 

@@ -542,7 +542,11 @@ void gamehsp::resetScreen( int opt )
 	init2DRender();
 
 	// ビューポート初期化
+#ifndef HSPDISH
 	updateViewport( 0, 0, getWidth(), getHeight() );
+#else
+	updateViewport( getOriginX(), getOriginY(), getWidth() * getScaleX(), getHeight() * getScaleY() );
+#endif
 
 	//	固定フレームレート設定
 	double fixedrate = (double)GetSysReq(SYSREQ_FIXEDFRAME);
